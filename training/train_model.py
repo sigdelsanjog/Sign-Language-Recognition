@@ -5,6 +5,7 @@ from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.utils import to_categorical
+import tensorflow as tf
 
 # Load the dataset
 df = pd.read_csv('sign_language_landmarks.csv')
@@ -23,14 +24,18 @@ y_categorical = to_categorical(y_encoded, num_classes=26)
 # Split the dataset into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y_categorical, test_size=0.2, random_state=42)
 
-# Build the neural network model
-model = Sequential()
-model.add(Dense(128, input_shape=(X_train.shape[1],), activation='relu'))
-model.add(Dense(64, activation='relu'))
-model.add(Dense(26, activation='softmax'))  # 26 output units for A-Z
+# Create a MirroredStrategy for data parallelism
+strategy = tf.distribute.MirroredStrategy()
 
-# Compile the model
-model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+# Build the neural network model inside the strategy scope
+with strategy.scope():
+    model = Sequential()
+    model.add(Dense(128, input_shape=(X_train.shape[1],), activation='relu'))
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(26, activation='softmax'))  # 26 output units for A-Z
+
+    # Compile the model
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 # Start timing the training process
 start_time = time.time()
@@ -51,5 +56,5 @@ test_loss, test_accuracy = model.evaluate(X_test, y_test)
 print(f"Test accuracy: {test_accuracy}")
 
 # Save the trained model
-model.save('models/sign_language_model.h5')
-print("Model saved as 'models/sign_language_model.h5'.")
+model.save('models/sign_language_model1G.h5')
+print("Model saved as 'models/sign_language_model1G.h5'.")
