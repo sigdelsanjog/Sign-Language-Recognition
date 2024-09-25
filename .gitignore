@@ -1,0 +1,13 @@
+venv
+/venv
+backend/venv
+
+node_modules/
+/node_modules
+frontend/node_modules
+package-lock.json
+*.pyc
+
+dataset/
+dataset1G/
+dataset5G/
