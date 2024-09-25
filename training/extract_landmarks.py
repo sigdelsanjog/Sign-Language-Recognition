@@ -1,14 +1,13 @@
 import os
-import mediapipe as mp
 import cv2
-import numpy as np
 import pandas as pd
-import time  # Import the time module
+import time
+import concurrent.futures
+import mediapipe as mp
 
 # Mediapipe initialization
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(static_image_mode=True, max_num_hands=1)
-mp_drawing = mp.solutions.drawing_utils
 
 # Function to extract hand landmarks
 def extract_hand_landmarks(image_path):
@@ -26,6 +25,12 @@ def extract_hand_landmarks(image_path):
             landmarks.extend([lm.x, lm.y, lm.z])
         return landmarks
     return None
+
+# Function to process a single image
+def process_image(letter, image_file):
+    image_path = os.path.join(data_dir, letter, image_file)
+    landmarks = extract_hand_landmarks(image_path)
+    return landmarks, letter
 
 # Directory paths
 data_dir = "dataset1G/"  # Ensure this path is correct
@@ -54,21 +59,27 @@ for letter in letters:
 
 print(f"Total images to process: {total_images}")
 
-# Loop over each folder (each letter)
-for letter in letters:
-    letter_dir = os.path.join(data_dir, letter)
-    if not os.path.exists(letter_dir):
-        print(f"Warning: Directory {letter_dir} does not exist. Skipping.")
-        continue
-    for image_file in os.listdir(letter_dir):
-        image_path = os.path.join(letter_dir, image_file)
-        landmarks = extract_hand_landmarks(image_path)
+# Create a ThreadPoolExecutor for parallel processing
+max_workers = 4  # Adjust based on your system's capabilities
+with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+    futures = []
+    for letter in letters:
+        letter_dir = os.path.join(data_dir, letter)
+        if not os.path.exists(letter_dir):
+            print(f"Warning: Directory {letter_dir} does not exist. Skipping.")
+            continue
+        for image_file in os.listdir(letter_dir):
+            futures.append(executor.submit(process_image, letter, image_file))
+
+    # Collect results as they complete
+    for future in concurrent.futures.as_completed(futures):
+        processed_images += 1
+        landmarks, letter = future.result()
         if landmarks:
             landmark_data.append(landmarks)
             labels.append(letter)
-        processed_images += 1
 
-        # Log progress every 10,000 images
+        # Log progress every 1000 images
         if processed_images % 1000 == 0:
             elapsed = time.time() - start_time
             print(f"Processed {processed_images}/{total_images} images. Elapsed time: {elapsed:.2f} seconds.")
