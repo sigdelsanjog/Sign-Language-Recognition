@@ -66,7 +66,7 @@ for letter in letters:
 print(f"Total images to process: {total_images}")
 
 # Excel file for logging progress
-progress_excel = 'time_calculation.xlsx'
+progress_excel = 'landmark_extraction_timesheet.xlsx'
 
 # Specify a tab name for the current execution
 tab_name = "2GB"  # Change this value as needed
