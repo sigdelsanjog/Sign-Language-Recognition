@@ -22,7 +22,7 @@ The frontend is designed to provide a user-friendly interface for the hand gestu
 - **User Interaction**: Allows users to see the output of gesture recognition with a simple and intuitive interface.
 
 ### Technologies Used
-- **React.js**: A JavaScript library for building user interfaces, providing the core functionality for handling the UI and user interactions.
+- **Vue.js**: A JavaScript library for building user interfaces, providing the core functionality for handling the UI and user interactions.
 - **HTML/CSS**: Basic web technologies for structuring and styling the user interface.
 - **MediaStream API**: Used for capturing real-time video from the webcam.
 
@@ -44,7 +44,7 @@ The backend handles the core logic for image processing, hand landmark extractio
 - **Error Handling**: Skips corrupt or missing images during processing.
 
 ### Technologies Used
-- **Python**: Core programming language used to implement the backend.
+- **FAST API**: A Python framework used to develop API to communicate with frontend and other API services.
 - **Mediapipe**: A framework by Google for extracting hand landmarks.
 - **OpenCV**: A library for real-time computer vision, used for image processing.
 - **Concurrent Futures**: Used to implement multi-threaded processing for handling large datasets efficiently.
