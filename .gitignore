@@ -9,5 +9,6 @@ package-lock.json
 *.pyc
 
 dataset/
-dataset1G/
-dataset5G/
+dataset_1G/
+dataset_5G/
+dataset_chunks/
