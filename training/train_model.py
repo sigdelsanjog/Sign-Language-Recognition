@@ -11,7 +11,7 @@ import numpy as np
 import os
 
 # Load the dataset
-df = pd.read_csv('sign_language_landmarks.csv')
+df = pd.read_csv('landmarks_5G.csv')
 
 # Separate features and labels
 X = df.drop('label', axis=1)
@@ -22,7 +22,7 @@ label_encoder = LabelEncoder()
 y_encoded = label_encoder.fit_transform(y)
 
 # One-hot encode the labels for neural network training
-y_categorical = to_categorical(y_encoded, num_classes=26)
+y_categorical = to_categorical(y_encoded, num_classes=29)
 
 # Split the dataset into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y_categorical, test_size=0.2, random_state=42)
@@ -31,7 +31,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y_categorical, test_size=
 strategy = tf.distribute.MirroredStrategy()
 
 # Function to log training time, accuracy, precision, recall, F1 score, and time difference to an Excel file
-def log_training_progress(epoch, times, accuracies, precisions, recalls, f1_scores, sheet_name="TrainingRun"):
+def log_training_progress(epoch, times, accuracies, precisions, recalls, f1_scores, sheet_name="Train_5G"):
     progress_excel = 'training_timesheet.xlsx'
     
     # Create a DataFrame for the current progress
@@ -71,7 +71,7 @@ with strategy.scope():
     model = Sequential()
     model.add(Dense(128, input_shape=(X_train.shape[1],), activation='relu'))
     model.add(Dense(64, activation='relu'))
-    model.add(Dense(26, activation='softmax'))  # 26 output units for A-Z
+    model.add(Dense(29, activation='softmax'))  # 26 output units for A-Z
 
     # Compile the model
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -137,5 +137,6 @@ test_loss, test_accuracy = model.evaluate(X_test, y_test)
 print(f"Test accuracy: {test_accuracy}")
 
 # Save the trained model
-model.save('models/sign_language_model1G.h5')
-print("Model saved as 'models/sign_language_model1G.h5'.")
+model.save('models/sign_language_model_5GB.h5')
+model.save('models/sign_language_model_5GB.keras')
+print("Model saved as 'models/sign_language_model_5GB.h5'.")

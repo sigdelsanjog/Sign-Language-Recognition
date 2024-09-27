@@ -5,7 +5,8 @@ import time
 import concurrent.futures
 import mediapipe as mp
 import warnings
-import tensorflow as tf
+import utils.free_resources as free_resources  # Import the new module
+import utils.log_progress as log_progress  # Import the log progress module
 
 # Suppress warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -39,7 +40,7 @@ def process_image(letter, image_file):
     return landmarks, letter
 
 # Directory paths
-data_dir = "dataset1G/"  # Ensure this path is correct
+data_dir = "dataset_1G/"  # Ensure this path is correct
 letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 # Initialize lists to store the data
@@ -67,12 +68,10 @@ print(f"Total images to process: {total_images}")
 
 # Excel file for logging progress
 progress_excel = 'landmark_extraction_timesheet.xlsx'
-
-# Specify a tab name for the current execution
-tab_name = "2GB"  # Change this value as needed
+tab_name = "22GB"  # Change this value as needed
 
 # Create a ThreadPoolExecutor for parallel processing
-max_workers = 4  # Adjust based on your system's capabilities
+max_workers = 7  # Adjust based on your system's capabilities
 with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
     futures = []
     for letter in letters:
@@ -82,9 +81,6 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             continue
         for image_file in os.listdir(letter_dir):
             futures.append(executor.submit(process_image, letter, image_file))
-
-    # Create a variable to store the last elapsed time for difference calculation
-    last_elapsed_time = None
 
     # Collect results as they complete
     for future in concurrent.futures.as_completed(futures):
@@ -99,48 +95,14 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             current_elapsed_time = time.time() - start_time
             print(f"Processed {processed_images}/{total_images} images. Elapsed time: {current_elapsed_time:.2f} seconds.")
 
-            # Create a DataFrame for the current progress
-            progress_data = pd.DataFrame({
-                'Processed Images': [processed_images], 
-                'Elapsed Time': [current_elapsed_time]
-            })
-
-            # Try to read the existing data from the Excel file
-            if os.path.exists(progress_excel):
-                # Check if the sheet exists
-                with pd.ExcelFile(progress_excel) as xls:
-                    existing_sheets = xls.sheet_names
-                    if tab_name in existing_sheets:
-                        # Read existing data
-                        existing_data = pd.read_excel(xls, sheet_name=tab_name)
-                        
-                        # Calculate time difference based on the last elapsed time
-                        if not existing_data.empty:
-                            last_elapsed_time = existing_data['Elapsed Time'].iloc[-1]  # Last entry elapsed time
-                            time_difference = current_elapsed_time - last_elapsed_time
-                            progress_data['Time Difference'] = time_difference
-                        else:
-                            progress_data['Time Difference'] = None  # No previous data for first run
-
-                        # Append new data to the existing data
-                        updated_data = pd.concat([existing_data, progress_data], ignore_index=True)
-                    else:
-                        # If the sheet does not exist, create a new one
-                        progress_data['Time Difference'] = None
-                        updated_data = progress_data
-            else:
-                # Write to the Excel file if it doesn't exist yet
-                updated_data = progress_data
-
-            # Save updated data to the Excel file
-            with pd.ExcelWriter(progress_excel, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                updated_data.to_excel(writer, sheet_name=tab_name, index=False)
+            # Call the logging function
+            log_progress.calc_landmark_extraction_time(processed_images, current_elapsed_time, tab_name, progress_excel)
 
 # Convert the data to a DataFrame and save it
 if landmark_data:
     df = pd.DataFrame(landmark_data)
     df['label'] = labels
-    output_csv = 'sign_language_landmarks.csv'
+    output_csv = 'Llandmarks.csv'
     df.to_csv(output_csv, index=False)
     print(f"Landmark extraction completed. Data saved to {output_csv}.")
 else:
@@ -152,3 +114,8 @@ total_time = end_time - start_time
 print(f"Total time taken for landmark extraction: {total_time:.2f} seconds ({total_time/60:.2f} minutes).")
 
 hands.close()
+
+# Free resources after program ends
+free_resources.clear_memory_caches()
+free_resources.clear_tensorflow_session()
+free_resources.kill_python_processes()
