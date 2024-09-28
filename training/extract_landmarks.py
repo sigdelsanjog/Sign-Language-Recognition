@@ -5,6 +5,7 @@ import time
 import concurrent.futures
 import mediapipe as mp
 import warnings
+import tensorflow as tf
 import utils.free_resources as free_resources  # Import the new module
 import utils.log_progress as log_progress  # Import the log progress module
 
@@ -12,9 +13,25 @@ import utils.log_progress as log_progress  # Import the log progress module
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore")  # Suppress all warnings, including TensorFlow
 
-# Mediapipe initialization
+# Enable logging of device placement to ensure GPU usage
+tf.debugging.set_log_device_placement(True)
+
+# Check if TensorFlow detects the GPU
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+    print(f"TensorFlow is using the following GPU(s): {gpus}")
+else:
+    print("No GPU found. TensorFlow is using the CPU.")
+
+# Mediapipe initialization with GPU support
 mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(static_image_mode=True, max_num_hands=1)
+hands = mp_hands.Hands(
+    static_image_mode=True,
+    max_num_hands=1,
+    model_complexity=1,
+    min_detection_confidence=0.5,
+    min_tracking_confidence=0.5
+)
 
 # Function to extract hand landmarks
 def extract_hand_landmarks(image_path):
@@ -71,7 +88,7 @@ progress_excel = 'landmark_extraction_timesheet.xlsx'
 tab_name = "22GB"  # Change this value as needed
 
 # Create a ThreadPoolExecutor for parallel processing
-max_workers = 7  # Adjust based on your system's capabilities
+max_workers = 6  # Adjust based on your system's capabilities
 with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
     futures = []
     for letter in letters:
@@ -113,6 +130,7 @@ end_time = time.time()
 total_time = end_time - start_time
 print(f"Total time taken for landmark extraction: {total_time:.2f} seconds ({total_time/60:.2f} minutes).")
 
+# Close the MediaPipe hands object
 hands.close()
 
 # Free resources after program ends
