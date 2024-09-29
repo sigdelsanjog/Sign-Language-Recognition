@@ -2,11 +2,10 @@
   <div id="app">
     <h1>Sign Language Recognition</h1>
     <WebcamCapture @imageCaptured="processImage" />
-    <div v-if="sign">
-      <h2>Detected Sign: {{ sign }}</h2>
-    </div>
-    <div v-if="error" class="error-message">
-      <h3>Error: {{ error }}</h3>
+    <div class="messages-container">
+      <div v-for="(msg, index) in messages" :key="index" class="message">
+        <p>{{ msg }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -21,8 +20,7 @@ export default {
   },
   data() {
     return {
-      sign: null,
-      error: null, // Added for error handling
+      messages: [], // Array to hold interaction messages
     };
   },
   methods: {
@@ -33,16 +31,24 @@ export default {
       try {
         const response = await axios.post('http://localhost:8000/predict', formData, {
           headers: {
-            'Content-Type': 'multipart/form-data', // Specify content type
+            'Content-Type': 'multipart/form-data',
           },
         });
-        this.sign = response.data.sign || null;
-        this.error = response.data.error || null; // Handle error messages
+
+        const sign = response.data.sign || null;
+        if (sign) {
+          this.addMessage(`Captured an image for prediction. Predicted character: ${sign}`);
+        } else {
+          this.addMessage(`Captured an image for prediction. Error: ${response.data.error}`);
+        }
       } catch (error) {
         console.error('Error in prediction:', error);
-        this.error = 'An error occurred while predicting. Please try again.'; // User-friendly error message
-        this.sign = null; // Clear sign on error
+        this.addMessage('An error occurred while predicting. Please try again.');
       }
+    },
+    addMessage(msg) {
+      this.messages.unshift(msg); // Add new message at the top
+      if (this.messages.length > 10) this.messages.pop(); // Keep the last 10 messages
     },
   },
 };
@@ -54,7 +60,15 @@ export default {
   text-align: center;
 }
 
-.error-message {
-  color: red; /* Style for error message */
+.messages-container {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 20px;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+.message {
+  margin: 5px 0;
 }
 </style>
