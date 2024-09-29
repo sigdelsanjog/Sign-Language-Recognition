@@ -13,6 +13,10 @@ import utils.log_progress as log_progress  # Import the log progress module
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore")  # Suppress all warnings, including TensorFlow
 
+# Suppress Mediapipe and TensorFlow logs
+os.environ['GLOG_minloglevel'] = '2'  # Suppress Mediapipe logs
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress TensorFlow logs
+
 # Enable logging of device placement to ensure GPU usage
 tf.debugging.set_log_device_placement(True)
 
