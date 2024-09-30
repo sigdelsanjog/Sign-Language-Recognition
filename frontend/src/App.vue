@@ -1,9 +1,9 @@
 <template>
-  <div id="app">
+  <div id="app" class="container mt-4">
     <h1>Sign Language Recognition</h1>
     <WebcamCapture @imageCaptured="processImage" />
-    <div class="messages-container">
-      <div v-for="(msg, index) in messages" :key="index" class="message">
+    <div class="messages-container mt-3">
+      <div v-for="(msg, index) in messages" :key="index" class="alert alert-info">
         <p>{{ msg }}</p>
       </div>
     </div>
@@ -68,7 +68,8 @@ export default {
   padding: 10px;
 }
 
-.message {
-  margin: 5px 0;
+/* Make messages appear more prominent with Bootstrap styling */
+.alert {
+  margin: 5px 0; /* Margin for spacing between messages */
 }
 </style>

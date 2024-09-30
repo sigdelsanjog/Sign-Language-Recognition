@@ -1,11 +1,16 @@
 <template>
-  <div>
-    <button @click="startDetection">Start Detection</button>
-    <button @click="stopDetection">Stop Detection</button>
-    <video ref="video" autoplay></video>
-    <div class="message-container">
-      <div v-for="(message, index) in messages" :key="index" class="message">
-        {{ message }}
+  <div class="row">
+    <div class="col-md-6">
+      <video ref="video" autoplay></video>
+    </div>
+    <div class="col-md-6">
+      <button @click="toggleDetection" class="btn" :class="isDetecting ? 'btn-danger' : 'btn-primary'">
+        {{ isDetecting ? 'Stop Detection' : 'Start Detection' }}
+      </button>
+      <div class="message-container">
+        <div v-for="(message, index) in messages" :key="index" class="message">
+          {{ message }}
+        </div>
       </div>
     </div>
   </div>
@@ -19,46 +24,70 @@ export default {
     return {
       intervalId: null,
       messages: [],  // Store user interaction messages
+      isDetecting: false, // Track detection state
     };
   },
   methods: {
-    startDetection() {
-      this.messages.push("Detection started.");
-      this.intervalId = setInterval(this.captureAndSendImage, 4000); // Adjust the interval as needed
+    async toggleDetection() {
+      if (this.isDetecting) {
+        await this.stopDetection();
+      } else {
+        await this.startDetection();
+      }
     },
-    stopDetection() {
+    async startDetection() {
+      this.addMessage("Detection started.");
+      this.isDetecting = true;
+      this.intervalId = setInterval(this.captureAndSendImage, 4000); // Adjust the interval as needed
+
+      // Send a request to start detection on the backend
+      try {
+        await axios.post('http://localhost:8000/start_detection');
+        this.addMessage('Started detection on the backend.');
+      } catch (error) {
+        console.error('Error starting detection:', error);
+        this.addMessage('Error: Could not start detection on the backend.');
+        this.isDetecting = false; // Reset state on error
+      }
+    },
+    async stopDetection() {
       clearInterval(this.intervalId);
       this.intervalId = null;
-      this.messages.push("Detection stopped.");
+      this.addMessage("Detection stopped.");
+      this.isDetecting = false;
+
+      // Send a request to stop detection on the backend
+      try {
+        await axios.post('http://localhost:8000/stop_detection');
+        this.addMessage('Stopped detection on the backend.');
+      } catch (error) {
+        console.error('Error stopping detection:', error);
+        this.addMessage('Error: Could not stop detection on the backend.');
+      }
     },
     async captureAndSendImage() {
       const video = this.$refs.video;
 
-      // Log video dimensions to ensure it is streaming
-      console.log(`Video dimensions: ${video.videoWidth}x${video.videoHeight}`);
+      // Check if the video reference is valid
+      if (!video || !video.videoWidth || !video.videoHeight) {
+        console.error('Video element is not available or has no dimensions.');
+        this.addMessage('Error: Video element is not available.');
+        return;
+      }
 
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const context = canvas.getContext('2d');
 
-      // Draw the current frame from the video onto the canvas
       context.drawImage(video, 0, 0);
 
-      // Log canvas content for debugging
-      console.log("Canvas drawn. Checking for blob...");
-
-      // Create the blob
       canvas.toBlob(async (blob) => {
-        // Check if blob was created successfully
         if (!blob) {
-          console.error('Error: Blob creation failed. Check if the canvas has valid content.');
-          this.messages.push('An error occurred while capturing the image.');
+          console.error('Error: Blob creation failed.');
+          this.addMessage('An error occurred while capturing the image.');
           return;
         }
-
-        // Debug log to check blob properties
-        console.log(`Blob created:`, blob);
 
         const formData = new FormData();
         formData.append('file', blob, 'sign.png');
@@ -70,18 +99,20 @@ export default {
             },
           });
 
-          // Access the predicted sign directly
           const sign = response.data.sign || null;
           if (sign) {
-            this.messages.push(`Captured Image for prediction. Predicted character: ${sign}`);
+            this.addMessage(`Captured Image for prediction. Predicted character: ${sign}`);
           } else {
-            this.messages.push(`Error: ${response.data.error || 'Unknown error occurred'}`);
+            this.addMessage(`Error: ${response.data.error}`);
           }
         } catch (error) {
           console.error('Error in prediction:', error);
-          this.messages.push('An error occurred while predicting.');
+          this.addMessage('An error occurred while predicting.');
         }
       }, 'image/png');
+    },
+    addMessage(message) {
+      this.messages.unshift(message); // Add new messages at the beginning
     },
   },
   mounted() {
