@@ -102,6 +102,13 @@ export default {
           const sign = response.data.sign || null;
           if (sign) {
             this.addMessage(`Captured Image for prediction. Predicted character: ${sign}`);
+
+            // Play the audio
+            const audioUrl = response.data.audio_url;
+            if (audioUrl) {
+              const audio = new Audio(`http://localhost:8000${audioUrl}`);
+              audio.play();
+            }
           } else {
             this.addMessage(`Error: ${response.data.error}`);
           }

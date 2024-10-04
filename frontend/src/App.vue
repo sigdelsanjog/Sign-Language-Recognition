@@ -38,6 +38,13 @@ export default {
         const sign = response.data.sign || null;
         if (sign) {
           this.addMessage(`Captured an image for prediction. Predicted character: ${sign}`);
+
+          // Play the audio
+          const audioUrl = response.data.audio_url;
+          if (audioUrl) {
+            const audio = new Audio(`http://localhost:8000${audioUrl}`);
+            audio.play();
+          }
         } else {
           this.addMessage(`Captured an image for prediction. Error: ${response.data.error}`);
         }

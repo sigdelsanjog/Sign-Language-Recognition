@@ -1,9 +1,11 @@
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 import numpy as np
 import cv2
 from utils.mediapipe_utils import detect_hand_landmarks
 from tensorflow.keras.models import load_model
+from gtts import gTTS
 import os
 
 app = FastAPI()
@@ -48,9 +50,21 @@ async def predict_sign(file: UploadFile = File(...)):
         predicted_sign = chr(65 + predicted_class)
         print(f"Predicted sign: {predicted_sign}")  # Log prediction
 
-        return {"sign": predicted_sign}  # A-Z corresponds to 0-25
+        # Generate TTS for the predicted sign
+        tts = gTTS(text=predicted_sign, lang='en')
+        audio_path = os.path.join(os.path.dirname(__file__), 'output.mp3')
+        tts.save(audio_path)
+
+        return {"sign": predicted_sign, "audio_url": "/audio/output.mp3"}  # Include audio URL
     else:
         return {"error": "No hand detected"}
+
+@app.get("/audio/{filename}")
+async def get_audio(filename: str):
+    file_path = os.path.join(os.path.dirname(__file__), filename)
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="audio/mpeg")
+    return {"error": "Audio file not found"}
 
 @app.post("/start_detection")
 async def start_detection(background_tasks: BackgroundTasks):
@@ -65,6 +79,3 @@ async def stop_detection():
 def start_periodic_prediction():
     # This function is a placeholder as the camera will not be accessed in the backend.
     print("Periodic prediction will be handled by the frontend.")
-
-# Note: The periodic prediction logic is now handled entirely in the frontend, and
-# the backend only processes images sent from the frontend when the user starts detection.
