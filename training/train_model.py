@@ -11,7 +11,7 @@ import numpy as np
 import os
 
 # Load the dataset
-df = pd.read_csv('landmarks_5G.csv')
+df = pd.read_csv('landmarks_chunk_5G.csv')
 
 # Separate features and labels
 X = df.drop('label', axis=1)

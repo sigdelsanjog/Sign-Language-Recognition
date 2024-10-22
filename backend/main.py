@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 import numpy as np
 import cv2
-from utils.mediapipe_utils import detect_hand_landmarks
+from mediapipe_utils import detect_hand_landmarks
 from tensorflow.keras.models import load_model
 from gtts import gTTS
 import os

@@ -92,7 +92,7 @@ progress_excel = 'landmark_extraction_timesheet.xlsx'
 tab_name = "22GB"  # Change this value as needed
 
 # Create a ThreadPoolExecutor for parallel processing
-max_workers = 6  # Adjust based on your system's capabilities
+max_workers = 8  # Adjust based on your system's capabilities
 with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
     futures = []
     for letter in letters:
